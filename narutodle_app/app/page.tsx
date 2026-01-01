@@ -6,6 +6,14 @@ import Autocomplete from "@mui/material/Autocomplete";
 import Box from "@mui/material/Box";
 import { createFilterOptions } from "@mui/material/Autocomplete";
 import Popover from "@mui/material/Popover";
+import {
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+} from "@mui/material";
+import { url } from "inspector";
 
 interface Character {
   name: string;
@@ -30,8 +38,10 @@ export default function Home() {
   const [selected, setSelected] = useState<Character[]>([]);
   const [anchorEl, setAnchorEl] = useState<HTMLImageElement | null>(null);
   const [characterToGuess, setCharacterToGuess] = useState<Character>();
+  const [roundDone, setRoundDone] = useState(false);
   const [score, setScore] = useState(0);
   const [animationKey, setAnimationKey] = useState(0);
+  const [autocompleteOpen, setAutocompleteOpen] = useState(false);
   const open = Boolean(anchorEl);
   useEffect(() => {
     fetch("https://dattebayo-api.onrender.com/characters?page=1&limit=100")
@@ -40,14 +50,20 @@ export default function Home() {
         setCharacters(data.characters);
         console.log(data);
       })
-      .catch((error) => console.log(error));
+      .catch((error) => console.error(error));
   }, []);
 
   useEffect(() => {
     const random = Math.floor(Math.random() * 100);
     console.log(random);
-    setCharacterToGuess(characters[79]);
+    setCharacterToGuess(characters[random]);
   }, [score, characters]);
+
+  const handleDialogButton = () => {
+    setSelected([]);
+    setScore(prev => prev + 1);
+    setRoundDone(false);
+  }
 
   return (
     <div
@@ -96,18 +112,47 @@ export default function Home() {
             Iruka
           </p>
         </Popover>
+        <div className="font-(family-name:--font-ninja) bg-linear-to-r from-orange-600 via-orange-500 to-amber-500 p-3 tracking-widest flex items-center rounded-xl shadow-2xl/40">
+          <img
+            src="/kakashi.png"
+            width={150}
+            className="hover:scale-110 transition-all ease-in-out duration-300"
+          />
+          <h1 className="mr-10 text-shadow-lg/50">
+            Enter a character below to start
+          </h1>
+        </div>
         <Autocomplete
           id="bar"
+          open={autocompleteOpen}
+          onOpen={() => setAutocompleteOpen(true)}
+          onClose={() => setAutocompleteOpen(false)}
           onChange={(e, char) => {
             if (char) {
               setSelected((prev) => [char, ...prev]);
               setAnimationKey((prev) => prev + 1);
+              if (char.name === characterToGuess?.name) {
+                setTimeout(() => {
+                  setRoundDone(true);
+                }, 3000);
+              }
             }
+          }}
+          autoHighlight
+          autoSelect
+          clearOnBlur
+          disableClearable={false}
+          slotProps={{
+            popper: {
+              onMouseLeave: () => setAutocompleteOpen(false),
+            },
           }}
           sx={{
             width: 300,
             bgcolor: "#F5E6C8",
-            borderRadius: 1,
+            borderRadius: 3,
+            border: 4,
+            borderColor: "#7c2d12",
             mb: 50,
             "& .MuiInputBase-input": {
               fontFamily: "monospace",
@@ -116,9 +161,10 @@ export default function Home() {
             "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline":
               {
                 borderColor: "#7c2d12",
+                borderWidth: "1px",
               },
             "& .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline": {
-              borderWidth: "2px",
+              borderWidth: "1px",
               borderColor: "#7c2d12",
             },
           }}
@@ -133,8 +179,11 @@ export default function Home() {
                 sx={{
                   "& > img": { mr: 2, flexShrink: 0 },
                   border: 2,
-                  borderColor: "salmon",
+                  borderRight: 4,
+                  borderLeft: 4,
+                  borderColor: "#7a2d12",
                   bgcolor: "#F5E6C8",
+                  mx: 1,
                 }}
                 {...optionProps}
               >
@@ -149,14 +198,16 @@ export default function Home() {
               slotProps={{
                 htmlInput: {
                   ...params.inputProps,
-                  autoComplete: "new-password", // disable autocomplete and autofill
+                  autoComplete: "off",
+                  autoCorrect: "off",
+                  spellCheck: "false",
                 },
               }}
             />
           )}
           filterOptions={filterOptions}
         ></Autocomplete>
-        <div className="flex flex-col gap-3 -mt-100 mb-20 w-full max-w-4xl px-4 font-mono">
+        <div className="flex flex-col gap-3 -mt-100 mb-80 w-full max-w-4xl px-4 font-mono">
           {selected.length > 0 && (
             <div className="grid grid-cols-6 gap-2 font-bold text-orange-900 bg-amber-100 p-3 rounded-lg border-2 border-amber-600">
               <div className="text-center">Character</div>
@@ -190,7 +241,8 @@ export default function Home() {
                         : "bg-red-600 border-4 border-red-800"
                       : characterToGuess?.personal.sex || e.personal.sex
                       ? "bg-red-600 border-4 border-red-800"
-                      : "bg-green-600 border-4 border-green-800") + " text-sm rounded-md flex justify-center items-center h-full"
+                      : "bg-green-600 border-4 border-green-800") +
+                    " text-sm rounded-lg flex justify-center items-center h-full"
                   }
                   style={{
                     animation: index === 0 ? "flip 0.6s ease-in-out" : "none",
@@ -203,10 +255,72 @@ export default function Home() {
                       : e.personal.sex)) ||
                     e.personal.species}
                 </div>
-                <div className="text-center text-orange-900 text-sm">
+                <div
+                  key={`${index}-aff-${animationKey}`}
+                  className={
+                    (e.personal.affiliation &&
+                    characterToGuess?.personal.affiliation
+                      ? !Array.isArray(e.personal.affiliation) &&
+                        !Array.isArray(characterToGuess.personal.affiliation)
+                        ? e.personal.affiliation ===
+                          characterToGuess.personal.affiliation
+                          ? "bg-green-600 border-4 border-green-800"
+                          : "bg-red-600 border-4 border-red-800"
+                        : !Array.isArray(e.personal.affiliation) &&
+                          Array.isArray(characterToGuess.personal.affiliation)
+                        ? characterToGuess.personal.affiliation
+                            .slice(0, 2)
+                            .includes(e.personal.affiliation)
+                          ? "bg-yellow-400 border-4 border-amber-500 text-orange-900"
+                          : "bg-red-600 border-4 border-red-800"
+                        : Array.isArray(e.personal.affiliation) &&
+                          !Array.isArray(characterToGuess.personal.affiliation)
+                        ? e.personal.affiliation
+                            .slice(0, 2)
+                            .includes(characterToGuess.personal.affiliation)
+                          ? "bg-yellow-400 border-4 border-amber-500 text-orange-900"
+                          : "bg-red-600 border-4 border-red-800"
+                        : Array.isArray(e.personal.affiliation) &&
+                          Array.isArray(characterToGuess.personal.affiliation)
+                        ? characterToGuess.personal.affiliation
+                            .slice(0, 2)
+                            .every((aff) =>
+                              e.personal.affiliation?.slice(0, 2).includes(aff)
+                            ) &&
+                          characterToGuess.personal.affiliation.length ===
+                            e.personal.affiliation.length
+                          ? "bg-green-600 border-4 border-green-800"
+                          : characterToGuess.personal.affiliation
+                              .slice(0, 2)
+                              .some((aff) =>
+                                e.personal.affiliation
+                                  ?.slice(0, 2)
+                                  .includes(aff)
+                              )
+                          ? "bg-yellow-400 border-4 border-amber-500 text-orange-900"
+                          : "bg-red-600 border-4 border-red-800"
+                        : "bg-red-600 border-4 border-red-800"
+                      : characterToGuess?.personal.affiliation ||
+                        e.personal.affiliation
+                      ? "bg-red-600 border-4 border-red-800"
+                      : "bg-green-600 border-4 border-green-800") +
+                    " flex justify-center items-center rounded-lg text-center h-full p-1"
+                  }
+                  style={{
+                    animation: index === 0 ? "flip 1s ease-in-out" : "none",
+                    fontSize:
+                      Array.isArray(e.personal.affiliation) &&
+                      e.personal.affiliation
+                        ?.slice(0, 2)
+                        .join(", ")
+                        .includes("(")
+                        ? 11
+                        : 14,
+                  }}
+                >
                   {(e.personal.affiliation &&
                     (Array.isArray(e.personal.affiliation)
-                      ? e.personal.affiliation[0]
+                      ? e.personal.affiliation.slice(0, 2).join(", ")
                       : e.personal.affiliation)) ||
                     "None"}
                 </div>
@@ -216,25 +330,33 @@ export default function Home() {
                     (characterToGuess?.natureType && e.natureType
                       ? !Array.isArray(e.natureType) &&
                         Array.isArray(characterToGuess?.natureType)
-                        ? characterToGuess.natureType.includes(e.natureType)
+                        ? characterToGuess.natureType
+                            .slice(0, 3)
+                            .includes(e.natureType)
                           ? "bg-yellow-400 border-4 border-amber-500 text-orange-900"
                           : "bg-red-600 border-4 border-red-800 text-white"
                         : Array.isArray(e.natureType) &&
                           Array.isArray(characterToGuess?.natureType)
-                        ? e.natureType.every((nat) =>
-                            characterToGuess.natureType?.includes(nat)
-                          )
-                          ? "bg-green-600 border-4 border-green-800 text-white"
-                          : characterToGuess.natureType.some((nat) =>
-                              e.natureType?.includes(nat)
+                        ? e.natureType
+                            .slice(0, 3)
+                            .every((nat) =>
+                              characterToGuess.natureType
+                                ?.slice(0, 3)
+                                .includes(nat)
                             )
+                          ? "bg-green-600 border-4 border-green-800 text-white"
+                          : characterToGuess.natureType
+                              .slice(0, 3)
+                              .some((nat) =>
+                                e.natureType?.slice(0, 3).includes(nat)
+                              )
                           ? "bg-yellow-400 border-4 border-amber-500 text-orange-900"
                           : "bg-red-600 border-4 border-red-800 text-white"
                         : Array.isArray(e.natureType) &&
                           !Array.isArray(characterToGuess?.natureType)
-                        ? e.natureType.includes(
-                            characterToGuess?.natureType as string
-                          )
+                        ? e.natureType
+                            .slice(0, 3)
+                            .includes(characterToGuess?.natureType)
                           ? "bg-yellow-400 border-4 border-amber-500 text-orange-900"
                           : "bg-red-600 border-4 border-red-800 text-white"
                         : !Array.isArray(e.natureType) &&
@@ -246,10 +368,10 @@ export default function Home() {
                       : characterToGuess?.natureType || e.natureType
                       ? "bg-red-600 border-4 border-red-800 text-white"
                       : "bg-green-600 border-4 border-green-800 text-white") +
-                    " text-center text-sm flex items-center justify-center h-full"
+                    " text-center text-sm flex items-center rounded-lg justify-center h-full"
                   }
                   style={{
-                    animation: index === 0 ? "flip 0.6s ease-in-out" : "none",
+                    animation: index === 0 ? "flip 1.4s ease-in-out" : "none",
                   }}
                 >
                   {Array.isArray(e.natureType)
@@ -267,27 +389,33 @@ export default function Home() {
                     (characterToGuess?.personal.clan && e.personal.clan
                       ? !Array.isArray(e.personal.clan) &&
                         Array.isArray(characterToGuess?.personal.clan)
-                        ? characterToGuess.personal.clan.includes(
-                            e.personal.clan
-                          )
+                        ? characterToGuess.personal.clan
+                            .slice(0, 2)
+                            .includes(e.personal.clan)
                           ? "bg-yellow-400 border-4 border-amber-500 text-orange-900"
                           : "bg-red-600 border-4 border-red-800 text-white"
                         : Array.isArray(e.personal.clan) &&
                           Array.isArray(characterToGuess?.personal.clan)
-                        ? e.personal.clan.every((clan) =>
-                            characterToGuess.personal.clan?.includes(clan)
-                          )
-                          ? "bg-green-600 border-4 border-green-800 text-white"
-                          : characterToGuess.personal.clan.some((clan) =>
-                              e.personal.clan?.includes(clan)
+                        ? e.personal.clan
+                            .slice(0, 2)
+                            .every((clan) =>
+                              characterToGuess.personal.clan
+                                ?.slice(0, 2)
+                                .includes(clan)
                             )
+                          ? "bg-green-600 border-4 border-green-800 text-white"
+                          : characterToGuess.personal.clan
+                              .slice(0, 2)
+                              .some((clan) =>
+                                e.personal.clan?.slice(0, 2).includes(clan)
+                              )
                           ? "bg-yellow-400 border-4 border-amber-500 text-orange-900"
                           : "bg-red-600 border-4 border-red-800 text-white"
                         : Array.isArray(e.personal.clan) &&
                           !Array.isArray(characterToGuess?.personal.clan)
-                        ? e.personal.clan.includes(
-                            characterToGuess?.personal.clan as string
-                          )
+                        ? e.personal.clan
+                            .slice(0, 2)
+                            .includes(characterToGuess?.personal.clan as string)
                           ? "bg-yellow-400 border-4 border-amber-500 text-orange-900"
                           : "bg-red-600 border-4 border-red-800 text-white"
                         : !Array.isArray(e.personal.clan) &&
@@ -299,10 +427,10 @@ export default function Home() {
                       : characterToGuess?.personal.clan || e.personal.clan
                       ? "bg-red-600 border-4 border-red-800 text-white"
                       : "bg-green-600 border-4 border-green-800 text-white") +
-                    " text-center text-sm flex items-center justify-center h-full"
+                    " text-center p-1 text-sm flex items-center rounded-lg justify-center h-full"
                   }
                   style={{
-                    animation: index === 0 ? "flip 0.6s ease-in-out" : "none",
+                    animation: index === 0 ? "flip 1.8s ease-in-out" : "none",
                   }}
                 >
                   {e.personal.clan && Array.isArray(e.personal.clan)
@@ -318,31 +446,39 @@ export default function Home() {
                     e.personal.kekkeiGenkai
                       ? !Array.isArray(e.personal.kekkeiGenkai) &&
                         Array.isArray(characterToGuess?.personal.kekkeiGenkai)
-                        ? characterToGuess.personal.kekkeiGenkai.includes(
-                            e.personal.kekkeiGenkai
-                          )
+                        ? characterToGuess.personal.kekkeiGenkai
+                            .slice(0, 2)
+                            .includes(e.personal.kekkeiGenkai)
                           ? "bg-yellow-400 border-4 border-amber-500 text-orange-900"
                           : "bg-red-600 border-4 border-red-800 text-white"
                         : Array.isArray(e.personal.kekkeiGenkai) &&
                           Array.isArray(characterToGuess?.personal.kekkeiGenkai)
-                        ? e.personal.kekkeiGenkai.every((kkg) =>
-                            characterToGuess.personal.kekkeiGenkai?.includes(
-                              kkg
+                        ? e.personal.kekkeiGenkai
+                            .slice(0, 2)
+                            .every((kkg) =>
+                              characterToGuess.personal.kekkeiGenkai
+                                ?.slice(0, 2)
+                                .includes(kkg)
                             )
-                          )
                           ? "bg-green-600 border-4 border-green-800 text-white"
-                          : characterToGuess.personal.kekkeiGenkai.some((kkg) =>
-                              e.personal.kekkeiGenkai?.includes(kkg)
-                            )
+                          : characterToGuess.personal.kekkeiGenkai
+                              .slice(0, 2)
+                              .some((kkg) =>
+                                e.personal.kekkeiGenkai
+                                  ?.slice(0, 2)
+                                  .includes(kkg)
+                              )
                           ? "bg-yellow-400 border-4 border-amber-500 text-orange-900"
                           : "bg-red-600 border-4 border-red-800 text-white"
                         : Array.isArray(e.personal.kekkeiGenkai) &&
                           !Array.isArray(
                             characterToGuess?.personal.kekkeiGenkai
                           )
-                        ? e.personal.kekkeiGenkai.includes(
-                            characterToGuess?.personal.kekkeiGenkai as string
-                          )
+                        ? e.personal.kekkeiGenkai
+                            .slice(0, 2)
+                            .includes(
+                              characterToGuess?.personal.kekkeiGenkai as string
+                            )
                           ? "bg-yellow-400 border-4 border-amber-500 text-orange-900"
                           : "bg-red-600 border-4 border-red-800 text-white"
                         : !Array.isArray(e.personal.kekkeiGenkai) &&
@@ -358,10 +494,10 @@ export default function Home() {
                         e.personal.kekkeiGenkai
                       ? "bg-red-600 border-4 border-red-800 text-white"
                       : "bg-green-600 border-4 border-green-800 text-white") +
-                    " text-center text-sm flex items-center justify-center h-full"
+                    " text-center text-sm rounded-lg flex items-center justify-center h-full"
                   }
                   style={{
-                    animation: index === 0 ? "flip 0.6s ease-in-out" : "none",
+                    animation: index === 0 ? "flip 2.2s ease-in-out" : "none",
                   }}
                 >
                   {e.personal.kekkeiGenkai &&
@@ -376,6 +512,78 @@ export default function Home() {
             );
           })}
         </div>
+        <Dialog
+          open={roundDone}
+          slotProps={{
+            paper: {
+              sx: {
+                background:
+                  "linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fbbf24 100%)",
+                borderRadius: 3,
+                border: 5,
+                borderColor: "#7c2d12",
+              },
+            },
+          }}
+        >
+          <DialogTitle>
+            <div className="flex items-center">
+              <img src="/madara.png" width={120} />
+              <h1 className="font-(family-name:--font-ninja) tracking-widest text-rose-400 text-shadow-lg/40 mr-10">
+                Maybe I underestimated you
+              </h1>
+            </div>
+          </DialogTitle>
+          <DialogContent
+            sx={{
+              "&::-webkit-scrollbar": {
+                display: "none",
+              },
+              msOverflowStyle: "none",
+              scrollbarWidth: "none",
+            }}
+          >
+            <div className="flex flex-col justify-center items-center gap-6 font-(family-name:--font-ninja) text-white text-shadow-lg/40 tracking-widest">
+              <img
+                src="/roundDone.gif"
+                width={355}
+                className="rounded-xl shadow-xl/40 mb-3"
+              ></img>
+              <h1 className="text-xl">The character was:</h1>
+              <img
+                src={characterToGuess?.images[0]}
+                width={100}
+                className="rounded-xl shadow-lg/40 hover:scale-110 transition-transform ease-in-out duration-200"
+              ></img>
+              <h2 className="text-md">{characterToGuess?.name}</h2>
+            </div>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              sx={{
+                background:
+                  "linear-gradient(to right, #ea580c, #f97316, #fbbf24)",
+                color: "white",
+                "&:hover": {
+                  background:
+                    "linear-gradient(to right, #c2410c, #ea580c, #f59e0b)",
+                  transform: "scale(1.03)",
+                },
+                transition: "all 0.2s ease",
+                mr: 3,
+                mb: 2,
+                fontFamily: "var(--font-ninja)",
+                display: "flex",
+                justifyItems: "center",
+                alignItems: "center"
+              }}
+              onClick={handleDialogButton}
+            >
+              <p className="mt-1 text-shadow-lg/40">Next Round</p>
+              <img src="/naruto_run.png" width={35}></img>
+            </Button>
+          </DialogActions>
+        </Dialog>
       </div>
     </div>
   );
