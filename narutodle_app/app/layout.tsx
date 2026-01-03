@@ -9,7 +9,7 @@ const ninjaFont = localFont({
 
 export const metadata: Metadata = {
   title: "Narutodle Infinite",
-  description: "Guess away, dattebayo!",
+  description: "Naruto character guessing game with rogue-like round features and health, shinobi ranks and more. Guess Away dattebayo!",
   icons: "/assets/favicon.png"
 };
 
