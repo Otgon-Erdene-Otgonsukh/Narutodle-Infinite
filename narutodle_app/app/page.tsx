@@ -61,6 +61,7 @@ export default function Home() {
   const [score, setScore] = useState(0);
   const [animationKey, setAnimationKey] = useState(0);
   const [autocompleteOpen, setAutocompleteOpen] = useState(false);
+  const [inputValue, setInputValue] = useState("");
   const [health, setHealth] = useState(100);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -383,8 +384,11 @@ export default function Home() {
             ></img>
           </div>
           <Autocomplete
-            disabled={gameOver}
+            disabled={gameOver || roundDone}
             id="bar"
+            value={null}
+            inputValue={inputValue}
+            onInputChange={(_, newInputValue) => setInputValue(newInputValue)}
             open={autocompleteOpen}
             onOpen={() => setAutocompleteOpen(true)}
             onClose={() => setAutocompleteOpen(false)}
@@ -731,12 +735,14 @@ export default function Home() {
                     setDialogOpen(true);
                   }, 2300);
                 }
+
+                // Clear input on selection to make it easier to input the next character
+                setInputValue("");
               }
             }}
             autoHighlight
             autoSelect
             clearOnBlur
-            disableClearable={false}
             slotProps={{
               popper: {
                 onMouseLeave: () => setAutocompleteOpen(false),
@@ -981,12 +987,10 @@ export default function Home() {
                             : "bg-red-600 border-4 border-red-800 text-white"
                           : e.natureType.length > 1 &&
                             characterToGuess.natureType.length > 1
-                          ? e.natureType
+                          ? characterToGuess.natureType
                               .slice(0, 3)
                               .every((nat) =>
-                                characterToGuess.natureType
-                                  ?.slice(0, 3)
-                                  .includes(nat)
+                                e.natureType?.slice(0, 3).includes(nat)
                               )
                             ? "bg-green-600 border-4 border-green-800 text-white"
                             : characterToGuess.natureType
