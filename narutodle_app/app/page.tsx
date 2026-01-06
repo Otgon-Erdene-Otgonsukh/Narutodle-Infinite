@@ -107,7 +107,7 @@ export default function Home() {
   useEffect(() => {
     const random = Math.floor(Math.random() * characters.length);
     console.log(random);
-    setCharacterToGuess(characters[random]);
+    setCharacterToGuess(characters[64]);
   }, [score, characters]);
 
   const handleDialogButton = () => {
@@ -467,9 +467,7 @@ export default function Home() {
                         .slice(0, 2)
                         .every((aff) =>
                           char.personal.affiliation?.slice(0, 2).includes(aff)
-                        ) &&
-                      characterToGuess.personal.affiliation.length ===
-                        char.personal.affiliation.length
+                        ) 
                     ) {
                       AffPoint = 1;
                     } else if (
@@ -936,9 +934,7 @@ export default function Home() {
                                 e.personal.affiliation
                                   ?.slice(0, 2)
                                   .includes(aff)
-                              ) &&
-                            characterToGuess.personal.affiliation.length ===
-                              e.personal.affiliation.length
+                              )
                             ? "bg-green-600 border-4 border-green-800"
                             : characterToGuess.personal.affiliation
                                 .slice(0, 2)
