@@ -107,7 +107,7 @@ export default function Home() {
   useEffect(() => {
     const random = Math.floor(Math.random() * characters.length);
     console.log(random);
-    setCharacterToGuess(characters[64]);
+    setCharacterToGuess(characters[random]);
   }, [score, characters]);
 
   const handleDialogButton = () => {
