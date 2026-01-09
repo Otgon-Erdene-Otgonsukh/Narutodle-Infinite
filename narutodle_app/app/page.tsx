@@ -99,15 +99,13 @@ export default function Home() {
       .then((res) => res.json())
       .then((data) => {
         setCharacters(data);
-        console.log(data);
       })
       .catch((error) => console.error(error));
   }, []);
 
   useEffect(() => {
     const random = Math.floor(Math.random() * characters.length);
-    console.log(random);
-    setCharacterToGuess(characters[35]);
+    setCharacterToGuess(characters[random]);
   }, [score, characters]);
 
   const handleDialogButton = () => {
