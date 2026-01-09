@@ -107,7 +107,7 @@ export default function Home() {
   useEffect(() => {
     const random = Math.floor(Math.random() * characters.length);
     console.log(random);
-    setCharacterToGuess(characters[random]);
+    setCharacterToGuess(characters[35]);
   }, [score, characters]);
 
   const handleDialogButton = () => {
@@ -987,8 +987,14 @@ export default function Home() {
                               .slice(0, 3)
                               .every((nat) =>
                                 e.natureType?.slice(0, 3).includes(nat)
-                              )
+                              ) && characterToGuess.natureType.length === e.natureType.length
                             ? "bg-green-600 border-4 border-green-800 text-white"
+                            : characterToGuess.natureType
+                              .slice(0, 3)
+                              .every((nat) =>
+                                e.natureType?.slice(0, 3).includes(nat)
+                              ) && characterToGuess.natureType.length !== e.natureType.length ?
+                              "bg-yellow-400 border-4 border-amber-500 text-orange-900"
                             : characterToGuess.natureType
                                 .slice(0, 3)
                                 .some((nat) =>
